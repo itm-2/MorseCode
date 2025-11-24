@@ -1,15 +1,8 @@
-#include <iostream>
-#include <string>
-#include <vector>
-#include <algorithm>
-#include <cctype>
-#include <sstream>
-#include <limits>
-#include <set>
+#include <bits/stdc++.h>
 
 using namespace std;
 
-// --- ¸ğ½º ºÎÈ£ µ¥ÀÌÅÍ Á¤ÀÇ ---
+// --- ëª¨ìŠ¤ ë¶€í˜¸ ë°ì´í„° ì •ì˜ ---
 struct MorseEntry {
     char character;
     const char* code;
@@ -27,7 +20,7 @@ const MorseEntry MORSE_DEFINITIONS[] = {
 };
 const int NUM_MORSE_ENTRIES = sizeof(MORSE_DEFINITIONS) / sizeof(MORSE_DEFINITIONS[0]);
 
-// --- Q ºÎÈ£ Á¤ÀÇ ---
+// --- Q ë¶€í˜¸ ì •ì˜ ---
 const set<string> Q_CODES = {
     "QRA", "QRB", "QRC", "QRD", "QRE", "QRF", "QRG", "QRH", "QRI", "QRJ", "QRK", "QRL", "QRM", "QRN", "QRO", "QRP", "QRQ", "QRR", "QRS", "QRT", "QRU", "QRV", "QRW", "QRX", "QRY", "QRZ",
     "QSA", "QSB", "QSC", "QSD", "QSE", "QSF", "QSG", "QSH", "QSI", "QSJ", "QSK", "QSL", "QSM", "QSN", "QSO", "QSP", "QSQ", "QSR", "QSS", "QST", "QSU", "QSV", "QSW", "QSX", "QSY", "QSZ",
@@ -35,7 +28,7 @@ const set<string> Q_CODES = {
     "QUA", "QUB", "QUC", "QUD", "QUE", "QUF", "QUG", "QUH", "QUI", "QUJ", "QUK", "QUL", "QUM", "QUN", "QUO", "QUP", "QUQ", "QUR", "QUS", "QUT", "QUU", "QUV", "QUW", "QUX", "QUY", "QUZ"
 };
 
-// --- ³ëµå ±¸Á¶ Á¤ÀÇ ---
+// --- ë…¸ë“œ êµ¬ì¡° ì •ì˜ ---
 struct MorseNode {
     char character;
     MorseNode* dot_child;
@@ -44,7 +37,7 @@ struct MorseNode {
     MorseNode(char c = '\0') : character(c), dot_child(nullptr), dash_child(nullptr) {}
 };
 
-// --- Æ®¸® »ı¼º ¹× ±¸Ãà ---
+// --- íŠ¸ë¦¬ ìƒì„± ë° êµ¬ì¶• ---
 MorseNode* build_morse_tree() {
     MorseNode* root = new MorseNode();
 
@@ -79,7 +72,7 @@ void delete_morse_tree(MorseNode* node) {
     delete node;
 }
 
-// --- ´ÜÀÏ ¸ğ½º ºÎÈ£ ¹®ÀÚ¿­À» ¹®ÀÚ·Î º¯È¯ÇÏ´Â ÇïÆÛ ÇÔ¼ö ---
+// --- ë‹¨ì¼ ëª¨ìŠ¤ ë¶€í˜¸ ë¬¸ìì—´ì„ ë¬¸ìë¡œ ë³€í™˜í•˜ëŠ” í—¬í¼ í•¨ìˆ˜ ---
 char morse_segment_to_char(MorseNode* root, const string& segment) {
     MorseNode* curr = root;
     for (char c : segment) {
@@ -92,24 +85,24 @@ char morse_segment_to_char(MorseNode* root, const string& segment) {
     return curr->character;
 }
 
-// --- °ø¹é ¾ø´Â Q ºÎÈ£ ½ºÆ®¸² ÇØ¼® (Spaceless Decoding) ---
-// ÀÔ·Â: --.-.-.- (QRT)
-// ·ÎÁ÷: ¾ÕÀÇ 4ÀÚ¸®(--.-)´Â Q·Î °íÁ¤ÇÏ°í, ³ª¸ÓÁö ¹®ÀÚ¿­À» µÎ °³ÀÇ À¯È¿ÇÑ ¹®ÀÚ·Î ºĞÇÒ ½Ãµµ
+// --- ê³µë°± ì—†ëŠ” Q ë¶€í˜¸ ìŠ¤íŠ¸ë¦¼ í•´ì„ (Spaceless Decoding) ---
+// ì…ë ¥: --.-.-.- (QRT)
+// ë¡œì§: ì•ì˜ 4ìë¦¬(--.-)ëŠ” Që¡œ ê³ ì •í•˜ê³ , ë‚˜ë¨¸ì§€ ë¬¸ìì—´ì„ ë‘ ê°œì˜ ìœ íš¨í•œ ë¬¸ìë¡œ ë¶„í•  ì‹œë„
 string try_decode_spaceless_q(MorseNode* root, const string& buffer) {
-    // Q ºÎÈ£ÀÇ ÃÖ¼Ò ±æÀÌ´Â Q(4) + E(1) + E(1) = 6
-    // ÃÖ´ë ±æÀÌ´Â Q(4) + 0(5) + 0(5) = 14 (¼ıÀÚ Æ÷ÇÔ ½Ã) ¶Ç´Â ¾ËÆÄºª¸¸ ÇÏ¸é Q(4)+Y(4)+Y(4)=12
+    // Q ë¶€í˜¸ì˜ ìµœì†Œ ê¸¸ì´ëŠ” Q(4) + E(1) + E(1) = 6
+    // ìµœëŒ€ ê¸¸ì´ëŠ” Q(4) + 0(5) + 0(5) = 14 (ìˆ«ì í¬í•¨ ì‹œ) ë˜ëŠ” ì•ŒíŒŒë²³ë§Œ í•˜ë©´ Q(4)+Y(4)+Y(4)=12
     if (buffer.length() < 6) return "";
 
-    // 1. Prefix°¡ Q(--.-)ÀÎÁö È®ÀÎ
+    // 1. Prefixê°€ Q(--.-)ì¸ì§€ í™•ì¸
     string q_sig = "--.-";
     if (buffer.substr(0, 4) != q_sig) return "";
 
-    // 2. ³ª¸ÓÁö ¹®ÀÚ¿­ ÃßÃâ
+    // 2. ë‚˜ë¨¸ì§€ ë¬¸ìì—´ ì¶”ì¶œ
     string remainder = buffer.substr(4);
     int rem_len = remainder.length();
 
-    // ³ª¸ÓÁö¸¦ µÎ °³ÀÇ À¯È¿ÇÑ ¸ğ½º ºÎÈ£·Î ³ª´­ ¼ö ÀÖ´ÂÁö ¸ğµç ÁöÁ¡¿¡¼­ ºĞÇÒ ½Ãµµ
-    // ¿¹: remainder = ".-.-" -> split at 1: "."(E) / "-.-"(K) -> QEK?
+    // ë‚˜ë¨¸ì§€ë¥¼ ë‘ ê°œì˜ ìœ íš¨í•œ ëª¨ìŠ¤ ë¶€í˜¸ë¡œ ë‚˜ëˆŒ ìˆ˜ ìˆëŠ”ì§€ ëª¨ë“  ì§€ì ì—ì„œ ë¶„í•  ì‹œë„
+    // ì˜ˆ: remainder = ".-.-" -> split at 1: "."(E) / "-.-"(K) -> QEK?
     //                        -> split at 2: ".-"(A) / ".-"(A) -> QAA?
     //                        -> split at 3: ".-."(R) / "-"(T) -> QRT? (Valid!)
 
@@ -125,7 +118,7 @@ string try_decode_spaceless_q(MorseNode* root, const string& buffer) {
             potential_code += c1;
             potential_code += c2;
 
-            // À¯È¿ÇÑ Q ºÎÈ£ ¸ñ·Ï¿¡ ÀÖ´ÂÁö È®ÀÎ
+            // ìœ íš¨í•œ Q ë¶€í˜¸ ëª©ë¡ì— ìˆëŠ”ì§€ í™•ì¸
             if (Q_CODES.count(potential_code)) {
                 return potential_code;
             }
@@ -139,71 +132,72 @@ int main() {
     MorseNode* morse_tree_root = build_morse_tree();
 
     cout << "============================================" << endl;
-    cout << "    ½Ç½Ã°£ ¸ğ½º ºÎÈ£ ÀÔ·Â ½Ã¹Ä·¹ÀÌ¼Ç    " << endl;
+    cout << "    ì‹¤ì‹œê°„ ëª¨ìŠ¤ ë¶€í˜¸ ì…ë ¥ ì‹œë®¬ë ˆì´ì…˜    " << endl;
     cout << "============================================" << endl;
-    cout << "* ÀÔ·Â ¹æ¹ı: '.' ¶Ç´Â '-'¸¦ ÇÑ ±ÛÀÚ¾¿ ÀÔ·ÂÇÏ°í Enter¸¦ ´©¸£¼¼¿ä." << endl;
-    cout << "* ±â´É ¼³¸í:" << endl;
-    cout << "  1. 5±ÛÀÚ ÀÌÇÏ: ÀÏ¹İ ÀÔ·Â ´ë±â" << endl;
-    cout << "  2. 6±ÛÀÚ ÀÌ»ó: ÀÚµ¿À¸·Î Q ºÎÈ£ ÆÇº° ¸ğµå ÁøÀÔ" << endl;
-    cout << "     - Q ºÎÈ£ ¸ÅÄª ¼º°ø ½Ã: Áï½Ã °á°ú Ãâ·Â" << endl;
-    cout << "     - Q ºÎÈ£ ¾Æ´Ô ÆÇ¸í ½Ã: ¹öÆÛ Æó±â" << endl;
-    cout << "* Á¾·áÇÏ·Á¸é 'exit' ÀÔ·Â" << endl;
+    cout << "* ì…ë ¥ ë°©ë²•: '.' ë˜ëŠ” '-'ë¥¼ í•œ ê¸€ìì”© ì…ë ¥í•˜ê³  Enterë¥¼ ëˆ„ë¥´ì„¸ìš”." << endl;
+    cout << "* ê¸°ëŠ¥ ì„¤ëª…:" << endl;
+    cout << "  1. 5ê¸€ì ì´í•˜: ì¼ë°˜ ì…ë ¥ ëŒ€ê¸°" << endl;
+    cout << "  2. 6ê¸€ì ì´ìƒ: ìë™ìœ¼ë¡œ Q ë¶€í˜¸ íŒë³„ ëª¨ë“œ ì§„ì…" << endl;
+    cout << "     - Q ë¶€í˜¸ ë§¤ì¹­ ì„±ê³µ ì‹œ: ì¦‰ì‹œ ê²°ê³¼ ì¶œë ¥" << endl;
+    cout << "     - Q ë¶€í˜¸ ì•„ë‹˜ íŒëª… ì‹œ: ë²„í¼ íê¸°" << endl;
+    cout << "* ì¢…ë£Œí•˜ë ¤ë©´ 'exit' ì…ë ¥" << endl;
     cout << "--------------------------------------------" << endl;
 
     string input_segment;
     string current_buffer = "";
 
     while (true) {
-        cout << "\nÀÔ·Â (ÇöÀç ¹öÆÛ: " << current_buffer << "): ";
+        cout << "\nì…ë ¥ (í˜„ì¬ ë²„í¼: " << current_buffer << "): ";
         cin >> input_segment;
 
         if (input_segment == "exit") break;
 
-        // À¯È¿¼º °Ë»ç (Á¡, ¼± ÀÌ¿Ü ¹«½Ã)
+        // ìœ íš¨ì„± ê²€ì‚¬ (ì , ì„  ì´ì™¸ ë¬´ì‹œ)
         for (char c : input_segment) {
             if (c == '.' || c == '-') {
                 current_buffer += c;
             }
         }
 
-        // --- ·ÎÁ÷ ºĞ±â ---
+        // --- ë¡œì§ ë¶„ê¸° ---
 
-        // Case 1: ¹öÆÛ ±æÀÌ°¡ 6 ÀÌ»óÀÎ °æ¿ì (Q ºÎÈ£ ¿¹Ãø ·ÎÁ÷ ¹ßµ¿)
+        // Case 1: ë²„í¼ ê¸¸ì´ê°€ 6 ì´ìƒì¸ ê²½ìš° (Q ë¶€í˜¸ ì˜ˆì¸¡ ë¡œì§ ë°œë™)
         if (current_buffer.length() >= 6) {
-            // 1. Q ºÎÈ£(Q·Î ½ÃÀÛ)°¡ ¾Æ´Ï¸é Áï½Ã Æó±â
+            // 1. Q ë¶€í˜¸(Që¡œ ì‹œì‘)ê°€ ì•„ë‹ˆë©´ ì¦‰ì‹œ íê¸°
             if (current_buffer.substr(0, 4) != "--.-") {
-                 cout << ">> [SYSTEM] ±æÀÌ 6 ÀÌ»óÀÌ³ª Q(--.-)·Î ½ÃÀÛÇÏÁö ¾ÊÀ½ -> ¹öÆÛ Æó±â." << endl;
+                 cout << ">> [SYSTEM] ê¸¸ì´ 6 ì´ìƒì´ë‚˜ Q(--.-)ë¡œ ì‹œì‘í•˜ì§€ ì•ŠìŒ -> ë²„í¼ íê¸°." << endl;
                  current_buffer = "";
                  continue;
             }
 
-            // 2. Q ºÎÈ£ ÇØµ¶ ½Ãµµ
+            // 2. Q ë¶€í˜¸ í•´ë… ì‹œë„
             string detected_q = try_decode_spaceless_q(morse_tree_root, current_buffer);
 
             if (!detected_q.empty()) {
-                // ¼º°ø: QRT µî ¹ß°ß
-                cout << ">> [SUCCESS] Q ºÎÈ£ °¨ÁöµÊ: " << detected_q << endl;
-                current_buffer = ""; // Ãâ·Â ÈÄ ÃÊ±âÈ­
+                // ì„±ê³µ: QRT ë“± ë°œê²¬
+                cout << ">> [SUCCESS] Q ë¶€í˜¸ ê°ì§€ë¨: " << detected_q << endl;
+                current_buffer = ""; // ì¶œë ¥ í›„ ì´ˆê¸°í™”
             } else {
-                // ½ÇÆĞ: ¾ÆÁ÷ ¿Ï¼ºµÇÁö ¾Ê¾Ò°Å³ª Àß¸øµÈ ÀÔ·Â
-                // Q ºÎÈ£ÀÇ ÀÌ·ĞÀû ÃÖ´ë ±æÀÌ(¾à 13~14)¸¦ ³Ñ¾î°¡¸é ´õ ÀÌ»ó ±â´Ù¸®Áö ¾Ê°í Æó±â
+                // ì‹¤íŒ¨: ì•„ì§ ì™„ì„±ë˜ì§€ ì•Šì•˜ê±°ë‚˜ ì˜ëª»ëœ ì…ë ¥
+                // Q ë¶€í˜¸ì˜ ì´ë¡ ì  ìµœëŒ€ ê¸¸ì´(ì•½ 13~14)ë¥¼ ë„˜ì–´ê°€ë©´ ë” ì´ìƒ ê¸°ë‹¤ë¦¬ì§€ ì•Šê³  íê¸°
                 if (current_buffer.length() > 13) {
-                    cout << ">> [FAIL] À¯È¿ÇÑ Q ºÎÈ£¸¦ Ã£À» ¼ö ¾øÀ½ (±æÀÌ ÃÊ°ú) -> ¹öÆÛ Æó±â." << endl;
+                    cout << ">> [FAIL] ìœ íš¨í•œ Q ë¶€í˜¸ë¥¼ ì°¾ì„ ìˆ˜ ì—†ìŒ (ê¸¸ì´ ì´ˆê³¼) -> ë²„í¼ íê¸°." << endl;
                     current_buffer = "";
                 } else {
-                    cout << ">> [INFO] Q ºÎÈ£ ÆĞÅÏ ºĞ¼® Áß... (Ãß°¡ ÀÔ·Â ´ë±â)" << endl;
+                    cout << ">> [INFO] Q ë¶€í˜¸ íŒ¨í„´ ë¶„ì„ ì¤‘... (ì¶”ê°€ ì…ë ¥ ëŒ€ê¸°)" << endl;
                 }
             }
         }
-        // Case 2: ¹öÆÛ ±æÀÌ°¡ 5 ÀÌÇÏÀÎ °æ¿ì (ÀÏ¹İ ¹®ÀÚ ´ë±â)
+        // Case 2: ë²„í¼ ê¸¸ì´ê°€ 5 ì´í•˜ì¸ ê²½ìš° (ì¼ë°˜ ë¬¸ì ëŒ€ê¸°)
         else {
-            // 5±ÛÀÚ ÀÌÇÏ¿¡¼­´Â ½ºÆäÀÌ½º¹Ù(¿©±â¼­´Â ½Ã¹Ä·¹ÀÌ¼Ç ÇÑ°è·Î ±¸Çö »ı·«)°¡
-            // µé¾î¿ÀÁö ¾Ê´Â ÀÌ»ó °è¼Ó ¹öÆÛ¸µÇÏ¸ç ´ë±âÇÕ´Ï´Ù.
-            // ¸¸¾à »ç¿ëÀÚ°¡ ¿©±â¼­ ²÷°í ½Í´Ù¸é º°µµÀÇ ±¸ºĞ ½ÅÈ£¸¦ ÁÖ¾î¾ß ÇÏÁö¸¸,
-            // ¿äÃ»ÇÏ½Å ·ÎÁ÷Àº "±æÀÌ°¡ ±æ¾îÁö¸é QºÎÈ£·Î °£ÁÖ"ÀÌ¹Ç·Î °è¼Ó ½×½À´Ï´Ù.
+            // 5ê¸€ì ì´í•˜ì—ì„œëŠ” ìŠ¤í˜ì´ìŠ¤ë°”(ì—¬ê¸°ì„œëŠ” ì‹œë®¬ë ˆì´ì…˜ í•œê³„ë¡œ êµ¬í˜„ ìƒëµ)ê°€
+            // ë“¤ì–´ì˜¤ì§€ ì•ŠëŠ” ì´ìƒ ê³„ì† ë²„í¼ë§í•˜ë©° ëŒ€ê¸°í•©ë‹ˆë‹¤.
+            // ë§Œì•½ ì‚¬ìš©ìê°€ ì—¬ê¸°ì„œ ëŠê³  ì‹¶ë‹¤ë©´ ë³„ë„ì˜ êµ¬ë¶„ ì‹ í˜¸ë¥¼ ì£¼ì–´ì•¼ í•˜ì§€ë§Œ,
+            // ìš”ì²­í•˜ì‹  ë¡œì§ì€ "ê¸¸ì´ê°€ ê¸¸ì–´ì§€ë©´ Që¶€í˜¸ë¡œ ê°„ì£¼"ì´ë¯€ë¡œ ê³„ì† ìŒ“ìŠµë‹ˆë‹¤.
         }
     }
 
     delete_morse_tree(morse_tree_root);
     return 0;
 }
+
