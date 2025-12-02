@@ -1,0 +1,60 @@
+변수
+- State: int
+- Mode: int
+Mode와 State를 통해 Key에 대응되는 코드를
+KeyMap으로부터 가져옵니다.
+
+- MaxState: int
+각 Mode마다 제공되는 State의 최댓값
+
++Timer: int
+LongKey의 입력의 최소 지속시간
+UserSetting에 변동사항이 생기면
+UI class로부터 변경될 수 있습니다.
+
+
+
+함수
++setKeyMapping(int KeyMappingType): void
+
+KeyMappingType을 UI로부터 가져와, Mode를 지정합니다.
+State는 0으로 하고, UserSetting의 AutoDitGap을 Timer로 지정합니다.
+
++keyAction(): int (중요함)
+
+key의 입력에 따라 Mode, State, 입력의 성격을 분류하여
+3비트 + 1바이트의 형식으로 출력합니다.
+
+이는 UI에서 커맨드를 분석하여 화면 또는 클래스에 반영합니다.
+
+Key의 입력에 대해 trigger되며,
+Freeze가 활성화된 경우에는 000 0000 0000을 반환합니다.
+
+해당 함수를 구성하는 private 함수는 다음과 같습니다.
+
+- detectSingleKey()
+- detectMultiKey()
+- detectLongKey()
+
+각각 짧은 입력, 두 버튼의 입력, 긴 입력에 대응됩니다.
+(더 자세한 사항은 KeyAction.txt 참조)
+
++ setState(int NextState): void
+
+UI로부터 State를 NextState로 갱신하고
+해당 State에 맞도록 서보모터를 회전시킵니다.
+
+각도는 다음과 같습니다. (60분법)
+state 0: 0
+state 1: 45
+state 2: 90
+state 3: 135
+state 4: 180
+
+UI는 state 4의 다음을 state 0으로,
+state 0의 이전을 state 4로 판정합니다.
+
+해당 함수를 구성하는 private 함수는 다음과 같습니다.
+- setServoMotor()
+
++setMode(int NextMode): void
