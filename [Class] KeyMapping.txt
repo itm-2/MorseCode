@@ -51,10 +51,11 @@ state 2: 90
 state 3: 135
 state 4: 180
 
-UI는 state 4의 다음을 state 0으로,
-state 0의 이전을 state 4로 판정합니다.
+UI는 MaxState의 다음 State를 0으로,
+0의 이전 State를 MaxState로 판정합니다.
 
 해당 함수를 구성하는 private 함수는 다음과 같습니다.
 - setServoMotor()
+
 
 +setMode(int NextMode): void
