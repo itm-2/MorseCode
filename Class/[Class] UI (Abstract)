@@ -1,0 +1,56 @@
+UI는 Key 입력이 감지되면
+KeyMapping에 KeyAction()을 요청합니다.
+
+KeyMapping으로부터 받은 Command를 해석하여
+다른 클래스에 특정 데이터 처리를 요청합니다.
+
+또한, 각각의 UI에 고유의 UUID를 부여하여 (직접 수동으로 부여)
+해당 UI가 이동할 수 있는 모든 UI를 nextUUID 배열에 저장합니다.
+
+모든 UI는 UserControl에 존재하며
+UI의 이동이 확정되었을 때, UserControl의 CurrentUUID 변경을 요청합니다.
+CurrentUUID가 변경되면 UserControl은 해당하는 UUID에 showUI를 요청합니다.
+
+변수
++KeyMappingType: int
+UI에서 사용하고자 하는 KeyMappingType을 지정합니다.
+
+e.g.) KeyMappingType을 Morse로 설정하면 이후
+showUI()를 하면 KeyMapping에 setKeyMapping(int KeyMappingType, int DitGap)을 요청하여
+Timer와 Mode를 초기화합니다.
+
++UUID: int
+UI 고유의 ID입니다.
+
++NextUUID: int
+UI의 상호작용에 의하여 다음 화면으로 넘어갈 수 있도록
+다음 화면의 UUID를 배열에 저장합니다.
+
+e.g.) UUID의 1101에서 화면 전환을 할 수 있는 상호작용은 ENTER, BACK이라고 가정합니다.
+이때, ENTER에 대해 1110, BACK에 대해 0111이라 하면
+
+NextUUID[0] = 1110
+NextUUID[1] = 0111과 같이 저장합니다.
+
+NextUUID의 저장 방식은 하위 클래스에 따라 달라질 수 있으며,
+반드시 BACK과 ENTER에 대한 NextUUID가 고려되어야 합니다.
+
+만약, BACK에 대한 NextUUID가 없는 경우, 자신의 ID를 넣습니다.
+( BACK은 초기화의 의미로 바라봄 )
+
+
+함수
+
+-textLCD(int[2] pos, string text): void
+
+textLCD를 통해 정해진 위치(pos)에 오른쪽으로 글자를 print합니다.
+
+pos : {x, y}
+왼쪽 위를 (0, 0)으로 하며 오른쪽, 아래로 갈수록 x, y가 증가합니다.
+총 16*2이지만, 화면을 넘어갈 때에는 화면 내로 들어오는 문자만 출력할 수 있도록 합니다.
+(최대 문자 위치는 (15, 1))
+
++ ShowUI() (미구현)
+각 하위 UI에서 정해진대로 화면을 구성합니다.
+단, 해당 개념은 반드시 KeyMapping 등의 변수 초기화에만 사용하여야 합니다.
+따라서, 실질적인 화면 변경 등의 로직은 다른 함수로 구현합니다.
