@@ -1,1 +1,40 @@
 메뉴가 존재하며, Setting 모드로 이를 스크롤할 수 있습니다.
+
+변수
++Menu: string[]
+
+각 메뉴의 이름이 적혀있으며,
+실제 화면에서 선택할 수 있는 요소들입니다.
+
+e.g.)
+{"SETTING","ENCODE","DECODE"}
+
++Cursor: int
+화면의 커서가 가리키는 메뉴로, Menu의 인덱스와 대응됩니다.
+
+e.g.)
+위의 메뉴에서 ENCODE를 가리킨다면 cursor는 1입니다.
+(MENU[1] = "ENCODE")
+
++MaxCursor: int
+커서의 최댓값입니다.
+e.g.) 위의 메뉴에서 MaxCursor = 2
+
+함수
++setMenu(): void
+
+Cursor의 값이 바뀐다면 그에 맞도록 UI에 적용하여 textLCD에 재송출합니다.
+(참고로 showUI는 초기화 목적이므로, 여기서 사용하면 안 됩니다.)
+
+참고
+
+상위 UI 클래스로부터 NextUI를 설정할 수 있는데,
+여기서 Cursor의 인덱스에 매칭하여 NextUUID 배열을 작성하시면 됩니다.
+
+단, Cursor 이후에 ENTER/BACK 입력에 대한 UUID도 반드시 작성하여야 합니다.
+
+따라서, Menu[MaxCursor+1]과 Menu[MaxCursor+2]는 각각 ENTER과 BACK의 UUID로 둡니다.
+
+e.g.)
+위의 메뉴에서 {"1011","0001","1010","0010","1100"} 등으로 함.
+(3,4번째 원소는 ENTER/BACK을 고려한 결과임)
