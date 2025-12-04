@@ -1,0 +1,13 @@
+IOUI는 Input과 textLCD를 제외한 Output이 모두 존재하는 UI를 뜻합니다.
+
+해당 클래스는 하나 이상의 Buffer를 포함하고 있으며,
+이 Buffer를 통해 입력을 받고 Processing합니다.
+
+함수
+
++wanrInvalid(): void
+잘못된 입력에 대해 Full Color LED(RED)와 Piezo(220Hz)를 통해 경고하고
+해당 입력을 버립니다.
+
+또는, 정해진 버퍼 사이즈를 초과하여도 마찬가지로 작동합니다.
+
