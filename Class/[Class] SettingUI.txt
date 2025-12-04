@@ -1,5 +1,7 @@
 메뉴가 존재하며, Setting 모드로 이를 스크롤할 수 있습니다.
 
+따라서, KeyMapping은 Setting입니다.
+
 변수
 +Menu: string[]
 
@@ -38,3 +40,25 @@ Cursor의 값이 바뀐다면 그에 맞도록 UI에 적용하여 textLCD에 재
 e.g.)
 위의 메뉴에서 {"1011","0001","1010","0010","1100"} 등으로 함.
 (3,4번째 원소는 ENTER/BACK을 고려한 결과임)
+
+화면 구성
+
+예제의 메뉴를 기준으로 초기 화면은 다음과 같습니다.
+
+  >>  SETTING
+      ENCODE
+
+초기 화면애서 DOWN 입력 시 다음과 같습니다. (화면 2)
+
+  >>  ENCODE
+      DECODE
+
+초기 화면에서 UP 입력 시 다음과 같습니다. (화면 3)
+
+  >>  DECODE
+      SETTING
+
+화면 2에서 DOWN 입력 시 다음과 같습니다. (화면 4)
+
+  >>  DECODE
+      SETTING
