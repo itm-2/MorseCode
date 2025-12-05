@@ -11,3 +11,6 @@ IOUI는 Input과 textLCD를 제외한 Output이 모두 존재하는 UI를 뜻합
 
 또는, 정해진 버퍼 사이즈를 초과하여도 마찬가지로 작동합니다.
 
+input(): void (Abstract)
+문자를 입력받습니다.
+
