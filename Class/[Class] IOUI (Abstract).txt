@@ -17,10 +17,16 @@ wait(int sec): void
 실제로 동작을 멈추는 게 아닌,
 conter 변수로 sec초만큼을 세고 신호를 줍니다.
 
-+printOutput(string s): void (Abstract)
-번역된 Buffer을 송출합니다.
++printLCD(string s): void
+Buffer의 내용(ASCII code)을 textLCD에 출력합니다.
 
-DecodeUI에서는 String을 textLCD에 나타내며
+EncodeUI에서는 input을 textLCD에 나타내며
+DecodeUI에서는 String을 textLCD에 나타냅니다.
+
++printPiezo(string s): void
+Buffer의 내용(Morse code)을 Piezo에 출력합니다.
+이때, UserSetting의 MaxDitTime과 DitGap을 반영합니다.
+
 EncodeUI에서는 모스부호를 Piezo와 Full Color LED에 나타냅니다.
 
 +showUI() (Abstract)
