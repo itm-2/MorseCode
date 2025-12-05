@@ -23,7 +23,7 @@ conter 변수로 sec초만큼을 세고 신호를 줍니다.
 DecodeUI에서는 String을 textLCD에 나타내며
 EncodeUI에서는 모스부호를 Piezo와 Full Color LED에 나타냅니다.
 
-+showUI()
++showUI() (Abstract)
 초기 화면 구성은 다음과 같습니다.
 
 초기 화면 (화면 1)
