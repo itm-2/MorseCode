@@ -29,3 +29,21 @@ KeyMapping은 Morse으로 합니다.
 KeyMapping을 Setting으로 바꿉니다.
 
 UP/DOWN 입력에 따라 page 전환이 가능합니다.
+
+모스 부호 입력에 대해 다음 규칙을 따릅니다.
+
+KeyAction()에 의하여 dit 신호는 000 0000 0001
+dah 신호는 000 0000 0010으로 주어지며
+
+SPACE는 Key 입력이 감지되지 않는지를
+UI에서 검사하여 000 0000 0000으로 부여합니다.
+(UserSetting의 DitGap만큼 대기 후 SPACE 판정합니다.)
+
+그 후, 신호를 다음과 같이 변환하여 IBuffer에 push합니다.
+000 0000 0001 -> 0
+000 0000 0010 -> 10
+000 0000 0011 -> 11
+
+SPACE 신호가 들어오면 translator에 번역을 요청합니다.
+
+만약 번역된 string의 비트가 모두 0이면 warnInvalid()를 요청합니다.
