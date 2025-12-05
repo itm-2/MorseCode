@@ -1,14 +1,21 @@
 OutputUI는 textLCD 이외의 다른 Output을 가지는 UI를 뜻합니다.
 
 해당 UI는 Piezo와 Full Color LED를 다룹니다.
+단, 각각의 함수는 toggle로 동작합니다.
 
 함수
--Piezo(int freq): void
++PiezoOn(int freq): void
 freq에 맞는 Piezo의 음을 송출합니다. (사각파)
+
++PiezoOff(): void
+Piezo의 송출을 종료합니다.
 
 일반적인 모스부호 입력은 440Hz
 모스 부호의 SPACE 입력은 220Hz로 합니다.
 
--FullColorLED(): void
++FullColorLEDOn(): void
 Full Color LED를 점등합니다.
 이때, 색상은 빨간색으로 고정합니다.
+
++FullColorLEDOff(): void
+Full Color LED를 소등합니다.
