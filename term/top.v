@@ -3,44 +3,68 @@
 module MorseSystemTop #(
     parameter integer CLK_HZ = 100_000_000
 )(
+    // ========================================
+    // ì™¸ë¶€ ì…ë ¥ (FPGA í•€)
+    // ========================================
     input  wire        clk,
     input  wire        rst_n,
     input  wire        is_active,
-
     input  wire [4:0]  btn,
 
-    input  wire        lcd_busy,
-    input  wire        lcd_done,
-    output wire        lcd_req,
-    output wire [1:0]  lcd_row,
-    output wire [3:0]  lcd_col,
-    output wire [7:0]  lcd_char,
-
+    // ========================================
+    // ì™¸ë¶€ ì¶œë ¥ (FPGA í•€)
+    // ========================================
     output wire [9:0]  led,
     output wire        led_r,
     output wire        led_g,
     output wire        led_b,
-
     output wire        piezo,
-    output wire        servo_pwm
+    output wire        servo_pwm,
+    
+    // LCD ì¶œë ¥
+    output wire        lcd_e,
+    output wire        lcd_rs,
+    output wire        lcd_rw,
+    output wire [7:0]  lcd_data
 );
 
-    // ================================================
-    // Å¸ÀÌ¹Ö ÄÁÆ®·Ñ·¯
-    // ================================================
+    // ========================================
+    // ë‚´ë¶€ ì‹ í˜¸ (ëª¨ë“ˆ ê°„ ì—°ê²°)
+    // ========================================
+    
+    // íƒ€ì´ë° ê´€ë ¨
     wire [2:0]  speed_level;
     wire [31:0] timeout_cycles;
     wire [31:0] dash_cycles;
     wire [31:0] autorepeat_cycles;
     wire [8:0]  servo_angle;
+    
+    // ë²„íŠ¼ ì…ë ¥ ê´€ë ¨
+    wire        key_valid;
+    wire [10:0] key_packet;
+    wire        dot_pulse;
+    wire        dash_pulse;
+    wire        auto_dot;
+    wire        btn1_held;
+    
+    // LCD ë‚´ë¶€ ì‹ í˜¸
+    wire        lcd_busy;
+    wire        lcd_done;
+    wire        lcd_req;
+    wire [1:0]  lcd_row;
+    wire [3:0]  lcd_col;
+    wire [7:0]  lcd_char;
 
+    // ================================================
+    // íƒ€ì´ë° ì»¨íŠ¸ë¡¤ëŸ¬
+    // ================================================
     TimingController #(
         .CLK_HZ(CLK_HZ)
     ) timing_ctrl (
         .clk(clk),
         .rst_n(rst_n),
-        .speed_up(btn[2]),      // btn[2]: ¼Óµµ Áõ°¡
-        .speed_down(btn[4]),    // btn[4]: ¼Óµµ °¨¼Ò
+        .speed_up(btn[2]),      // btn[2]: ì†ë„ ì¦ê°€
+        .speed_down(btn[4]),    // btn[4]: ì†ë„ ê°ì†Œ
         
         .speed_level(speed_level),
         .timeout_cycles(timeout_cycles),
@@ -50,16 +74,8 @@ module MorseSystemTop #(
     );
 
     // ================================================
-    // ¹öÆ° ÀÔ·Â Ã³¸®
+    // ë²„íŠ¼ ì…ë ¥ ì²˜ë¦¬
     // ================================================
-    wire key_valid;
-    wire [10:0] key_packet;
-
-    wire dot_pulse;
-    wire dash_pulse;
-    wire auto_dot;
-    wire btn1_held;
-
     ButtonMorseInput #(
         .DEBOUNCE_CYCLES(CLK_HZ / 2000),
         .LONG_PRESS_CYCLES(CLK_HZ / 40),
@@ -80,7 +96,7 @@ module MorseSystemTop #(
     );
 
     // ================================================
-    // ¹öÆÛ Å¬¸®¾î ½ÅÈ£ »ı¼º
+    // ë²„í¼ í´ë¦¬ì–´ ì‹ í˜¸ ìƒì„±
     // ================================================
     reg [1:0] clear_btn_sync;
     reg clear_btn_prev;
@@ -97,11 +113,11 @@ module MorseSystemTop #(
         end
     end
 
-    // »ó½Â ¿§Áö °¨Áö
+    // ìƒìŠ¹ ì—£ì§€ ê°ì§€
     assign clear_pulse = clear_btn_sync[1] && !clear_btn_prev;
 
     // ================================================
-    // µğÄÚ´õ (? ¹öÆÛ Å¬¸®¾î Ãß°¡)
+    // ë””ì½”ë”
     // ================================================
     DecodeUI decode (
         .clk(clk),
@@ -110,12 +126,13 @@ module MorseSystemTop #(
         .key_packet(key_packet),
         .key_valid(key_valid),
         
-        // ? ¹öÆÛ Å¬¸®¾î ½ÅÈ£ Ãß°¡
+        // ë²„í¼ í´ë¦¬ì–´ ì‹ í˜¸
         .clear_buffer(clear_pulse),
         
-        // µ¿Àû Å¸ÀÌ¹Ö ÆÄ¶ó¹ÌÅÍ
+        // ë™ì  íƒ€ì´ë° íŒŒë¼ë¯¸í„°
         .timeout_cycles(timeout_cycles),
 
+        // LCD ë‚´ë¶€ ì‹ í˜¸ (ì™¸ë¶€ í¬íŠ¸ ì•„ë‹˜!)
         .lcd_busy(lcd_busy),
         .lcd_done(lcd_done),
         .lcd_req(lcd_req),
@@ -128,9 +145,35 @@ module MorseSystemTop #(
     );
 
     // ================================================
-    // Piezo ÄÁÆ®·Ñ·¯
+    // LCD ì»¨íŠ¸ë¡¤ëŸ¬
     // ================================================
-    PiezoToneController piezo_ctl (
+    LCD_Controller #(
+        .CLK_HZ(CLK_HZ)
+    ) lcd_ctrl (
+        .clk(clk),
+        .rst_n(rst_n),
+        
+        // DecodeUIë¡œë¶€í„° ë°›ëŠ” ë‚´ë¶€ ì‹ í˜¸
+        .lcd_req(lcd_req),
+        .lcd_row(lcd_row),
+        .lcd_col(lcd_col),
+        .lcd_char(lcd_char),
+        
+        // DecodeUIë¡œ ë³´ë‚´ëŠ” ë‚´ë¶€ ì‹ í˜¸
+        .lcd_busy(lcd_busy),
+        .lcd_done(lcd_done),
+        
+        // ì™¸ë¶€ LCD í•€ ì¶œë ¥
+        .lcd_e(lcd_e),
+        .lcd_rs(lcd_rs),
+        .lcd_rw(lcd_rw),
+        .lcd_data(lcd_data)
+    );
+
+    // ================================================
+    // Piezo ì»¨íŠ¸ë¡¤ëŸ¬
+    // ================================================
+    PiezoToneController piezo_ctrl (
         .clk(clk),
         .rst_n(rst_n),
         .btn1_held(btn1_held),
@@ -144,9 +187,9 @@ module MorseSystemTop #(
     );
 
     // ================================================
-    // RGB LED ÄÁÆ®·Ñ·¯
+    // RGB LED ì»¨íŠ¸ë¡¤ëŸ¬
     // ================================================
-    RGB_LED_Controller rgb_ctl (
+    RGB_LED_Controller rgb_ctrl (
         .clk(clk),
         .rst_n(rst_n),
         .dash_pulse(dash_pulse),
@@ -159,7 +202,7 @@ module MorseSystemTop #(
     );
 
     // ================================================
-    // ¼­º¸ ¸ğÅÍ ÄÁÆ®·Ñ·¯
+    // ì„œë³´ ëª¨í„° ì»¨íŠ¸ë¡¤ëŸ¬
     // ================================================
     ServoController #(
         .CLK_HZ(CLK_HZ)
@@ -173,7 +216,7 @@ module MorseSystemTop #(
     // ================================================
     // Always-On LEDs
     // ================================================
-    AlwaysOnLEDs always_led (
+    AlwaysOnLEDs always_leds (
         .led(led)
     );
 
