@@ -222,14 +222,14 @@ module PiezoToneController (
     input  wire        auto_dot_pulse,
     input  wire        dash_pulse,
     
-    // ? ���� Ÿ�̹� �Է�
+    // ? 동적 타이밍 입력
     input  wire [31:0] dash_cycles,
     input  wire [31:0] autorepeat_cycles,
     
     output reg         piezo_out
 );
 
-    // �� ���� (440Hz ����)
+    // 톤 생성 (440Hz 예시)
     parameter CLK_HZ = 100_000_000;
     parameter TONE_HZ = 440;
     localparam TOGGLE_COUNT = CLK_HZ / (2 * TONE_HZ);
@@ -248,19 +248,19 @@ module PiezoToneController (
             piezo_out <= 1'b0;
         end
         else begin
-            // ���� ���� Ʈ����
+            // 비프 시작 트리거
             if(dash_pulse || auto_dot_pulse) begin
                 beeping <= 1'b1;
                 beep_counter <= 32'd0;
             end
             
-            // ���� ��
+            // 비프 중
             if(beeping) begin
-                // ? ���� ����Ŭ ���
+                // ? 동적 사이클 사용
                 if(beep_counter < (dash_pulse ? dash_cycles : autorepeat_cycles)) begin
                     beep_counter <= beep_counter + 1;
                     
-                    // �� ����
+                    // 톤 생성
                     if(tone_counter < TOGGLE_COUNT) begin
                         tone_counter <= tone_counter + 1;
                     end
@@ -286,7 +286,7 @@ module RGB_LED_Controller (
     input  wire        rst_n,
     input  wire        dash_pulse,
     
-    // ? ���� Ÿ�̹� �Է�
+    // ? 동적 타이밍 입력
     input  wire [31:0] dash_display_cycles,
     
     output reg         led_r,
@@ -314,7 +314,7 @@ module RGB_LED_Controller (
             end
             
             if(displaying) begin
-                // ? ���� ����Ŭ ���
+                // ? 동적 사이클 사용
                 if(display_counter >= dash_display_cycles) begin
                     displaying <= 1'b0;
                     led_r <= 1'b0;
@@ -347,33 +347,33 @@ module TimingController #(
 )(
     input  wire        clk,
     input  wire        rst_n,
-    input  wire        speed_up,      // btn[2] - �ӵ� ����
-    input  wire        speed_down,    // btn[5] - �ӵ� ����
+    input  wire        speed_up,      // btn[2] - 속도 증가
+    input  wire        speed_down,    // btn[5] - 속도 감소
     
-    output reg  [2:0]  speed_level,   // 0~4 �ܰ�
+    output reg  [2:0]  speed_level,   // 0~4 단계
     output reg  [31:0] timeout_cycles,
     output reg  [31:0] dash_cycles,
     output reg  [31:0] autorepeat_cycles,
     output reg  [8:0]  servo_angle    // 0, 45, 90, 135, 180
 );
 
-    // ���� Ÿ�̹� (0�ܰ�)
-    localparam BASE_TIMEOUT = CLK_HZ / 2;           // 0.5��
-    localparam BASE_DASH = CLK_HZ;                  // 1��
-    localparam BASE_AUTOREPEAT = CLK_HZ / 2;        // 0.5��
+    // 기준 타이밍 (0단계)
+    localparam BASE_TIMEOUT = CLK_HZ / 2;           // 0.5초
+    localparam BASE_DASH = CLK_HZ;                  // 1초
+    localparam BASE_AUTOREPEAT = CLK_HZ / 2;        // 0.5초
 
-    // �ӵ� ���� (�����Ҽ���: 256 = 1.0��)
+    // 속도 배율 (고정소수점: 256 = 1.0배)
     reg [15:0] speed_multiplier[0:4];
     
     initial begin
-        speed_multiplier[0] = 16'd256;   // 1.0�� (����)
-        speed_multiplier[1] = 16'd192;   // 0.75��
-        speed_multiplier[2] = 16'd128;   // 0.5��
-        speed_multiplier[3] = 16'd96;    // 0.375��
-        speed_multiplier[4] = 16'd64;    // 0.25��
+        speed_multiplier[0] = 16'd256;   // 1.0배 (기준)
+        speed_multiplier[1] = 16'd192;   // 0.75배
+        speed_multiplier[2] = 16'd128;   // 0.5배
+        speed_multiplier[3] = 16'd96;    // 0.375배
+        speed_multiplier[4] = 16'd64;    // 0.25배
     end
 
-    // ���� ���� ����
+    // 서보 각도 매핑
     reg [8:0] angle_map[0:4];
     
     initial begin
@@ -384,7 +384,7 @@ module TimingController #(
         angle_map[4] = 9'd180;
     end
 
-    // ��ٿ��
+    // 디바운스용
     reg [1:0] speed_up_sync;
     reg [1:0] speed_down_sync;
     reg speed_up_prev;
@@ -399,14 +399,14 @@ module TimingController #(
             speed_down_prev <= 1'b0;
         end
         else begin
-            // ����ȭ
+            // 동기화
             speed_up_sync <= {speed_up_sync[0], speed_up};
             speed_down_sync <= {speed_down_sync[0], speed_down};
             
             speed_up_prev <= speed_up_sync[1];
             speed_down_prev <= speed_down_sync[1];
             
-            // ��� ���� ����
+            // 상승 엣지 감지
             if(speed_up_sync[1] && !speed_up_prev) begin
                 if(speed_level < 3'd4)
                     speed_level <= speed_level + 3'd1;
@@ -419,7 +419,7 @@ module TimingController #(
         end
     end
 
-    // Ÿ�̹� ��� (���� ����)
+    // 타이밍 계산 (조합 논리)
     always @(*) begin
         // timeout_cycles = BASE_TIMEOUT * multiplier / 256
         timeout_cycles = (BASE_TIMEOUT * speed_multiplier[speed_level]) >> 8;
@@ -430,7 +430,7 @@ module TimingController #(
         // autorepeat_cycles = BASE_AUTOREPEAT * multiplier / 256
         autorepeat_cycles = (BASE_AUTOREPEAT * speed_multiplier[speed_level]) >> 8;
         
-        // ���� ����
+        // 서보 각도
         servo_angle = angle_map[speed_level];
     end
 
@@ -441,14 +441,14 @@ module ServoController #(
 )(
     input  wire       clk,
     input  wire       rst_n,
-    input  wire [8:0] angle,      // 0~180��
+    input  wire [8:0] angle,      // 0~180도
     output reg        pwm_out
 );
 
-    // PWM �ֱ�: 20ms (50Hz)
+    // PWM 주기: 20ms (50Hz)
     localparam PWM_PERIOD = CLK_HZ / 50;  // 2,000,000 cycles
     
-    // �޽� ��: 1ms(0��) ~ 2ms(180��) - ǥ�� ����
+    // 펄스 폭: 1ms(0도) ~ 2ms(180도) - 표준 서보
     localparam MIN_PULSE = CLK_HZ / 1000;  // 1ms = 100,000 cycles
     localparam MAX_PULSE = CLK_HZ / 500;   // 2ms = 200,000 cycles
     localparam PULSE_RANGE = MAX_PULSE - MIN_PULSE;  // 100,000 cycles
@@ -456,10 +456,10 @@ module ServoController #(
     reg [31:0] counter;
     reg [31:0] pulse_width;
     
-    // ���� �� �޽� �� ��ȯ (�����Ҽ��� ����)
+    // 각도 → 펄스 폭 변환 (고정소수점 연산)
     // pulse_width = MIN_PULSE + (angle * PULSE_RANGE / 180)
     always @(*) begin
-        // ���е� ���: (angle * PULSE_RANGE) ���� ���
+        // 정밀도 향상: (angle * PULSE_RANGE) 먼저 계산
         pulse_width = MIN_PULSE + ((angle * PULSE_RANGE) / 180);
     end
     
@@ -476,8 +476,387 @@ module ServoController #(
                 counter <= 32'd0;
             end
             
-            // PWM ���
+            // PWM 출력
             pwm_out <= (counter < pulse_width) ? 1'b1 : 1'b0;
+        end
+    end
+
+endmodule
+
+`timescale 1ns / 1ps
+
+//==============================================================================
+// LCD_Controller.v
+// 16x2 Character LCD 제어 모듈 (HD44780 호환)
+//==============================================================================
+// 기능:
+// - DecodeUI로부터 문자 출력 요청 수신
+// - LCD 초기화 및 문자 출력
+// - 4비트 모드 동작
+//==============================================================================
+
+module LCD_Controller #(
+    parameter integer CLK_HZ = 100_000_000,
+    parameter integer INIT_DELAY_US = 50000,      // 초기화 대기 시간 (50ms)
+    parameter integer CMD_DELAY_US = 2000,        // 명령 실행 대기 시간 (2ms)
+    parameter integer CHAR_DELAY_US = 50          // 문자 출력 대기 시간 (50us)
+)(
+    input  wire        clk,
+    input  wire        rst_n,
+    
+    // DecodeUI 인터페이스
+    input  wire        lcd_req,        // 문자 출력 요청
+    input  wire [1:0]  lcd_row,        // 행 (0~1)
+    input  wire [3:0]  lcd_col,        // 열 (0~15)
+    input  wire [7:0]  lcd_char,       // 출력할 문자
+    
+    output reg         lcd_busy,       // LCD 사용 중
+    output reg         lcd_done,       // 문자 출력 완료
+    
+    // LCD 하드웨어 인터페이스
+    output reg         lcd_e,          // Enable
+    output reg         lcd_rs,         // Register Select (0=명령, 1=데이터)
+    output reg         lcd_rw,         // Read/Write (0=쓰기, 1=읽기)
+    output reg  [7:0]  lcd_data        // 데이터 버스
+);
+
+    //==========================================================================
+    // 타이밍 상수 계산
+    //==========================================================================
+    localparam integer INIT_CYCLES = (CLK_HZ / 1_000_000) * INIT_DELAY_US;
+    localparam integer CMD_CYCLES  = (CLK_HZ / 1_000_000) * CMD_DELAY_US;
+    localparam integer CHAR_CYCLES = (CLK_HZ / 1_000_000) * CHAR_DELAY_US;
+    localparam integer E_PULSE_CYCLES = CLK_HZ / 1_000_000;  // 1us
+
+    //==========================================================================
+    // 상태 머신
+    //==========================================================================
+    localparam [3:0] ST_RESET       = 4'd0,
+                     ST_INIT_WAIT   = 4'd1,
+                     ST_INIT_1      = 4'd2,
+                     ST_INIT_2      = 4'd3,
+                     ST_INIT_3      = 4'd4,
+                     ST_INIT_4      = 4'd5,
+                     ST_IDLE        = 4'd6,
+                     ST_SET_ADDR    = 4'd7,
+                     ST_WRITE_CHAR  = 4'd8,
+                     ST_WAIT        = 4'd9;
+
+    reg [3:0] state, next_state;
+    reg [31:0] delay_counter;
+    reg [7:0] cmd_data;
+    reg [3:0] init_step;
+
+    //==========================================================================
+    // LCD 명령어 정의
+    //==========================================================================
+    localparam [7:0] CMD_CLEAR        = 8'h01,  // 화면 클리어
+                     CMD_HOME         = 8'h02,  // 커서 홈
+                     CMD_ENTRY_MODE   = 8'h06,  // Entry Mode (증가, 시프트 없음)
+                     CMD_DISPLAY_ON   = 8'h0C,  // 디스플레이 ON, 커서 OFF
+                     CMD_FUNCTION_SET = 8'h28,  // 4비트, 2라인, 5x8 폰트
+                     CMD_SET_DDRAM    = 8'h80;  // DDRAM 주소 설정
+
+    //==========================================================================
+    // DDRAM 주소 계산 (행/열 → LCD 주소)
+    //==========================================================================
+    reg [7:0] ddram_addr;
+    
+    always @(*) begin
+        case (lcd_row)
+            2'd0: ddram_addr = 8'h00 + {4'b0, lcd_col};  // 1행: 0x00~0x0F
+            2'd1: ddram_addr = 8'h40 + {4'b0, lcd_col};  // 2행: 0x40~0x4F
+            default: ddram_addr = 8'h00;
+        endcase
+    end
+
+    //==========================================================================
+    // 상태 머신 (순차 로직)
+    //==========================================================================
+    always @(posedge clk or negedge rst_n) begin
+        if (!rst_n) begin
+            state <= ST_RESET;
+            delay_counter <= 0;
+            init_step <= 0;
+        end else begin
+            state <= next_state;
+            
+            // 딜레이 카운터
+            if (state != next_state) begin
+                delay_counter <= 0;
+            end else if (delay_counter < 32'hFFFFFFFF) begin
+                delay_counter <= delay_counter + 1;
+            end
+            
+            // 초기화 단계 카운터
+            if (state == ST_INIT_1 && next_state == ST_INIT_2) begin
+                init_step <= init_step + 1;
+            end else if (state == ST_RESET) begin
+                init_step <= 0;
+            end
+        end
+    end
+
+    //==========================================================================
+    // 상태 머신 (조합 로직)
+    //==========================================================================
+    always @(*) begin
+        next_state = state;
+        
+        case (state)
+            //--------------------------------------------------------------
+            // 리셋 상태
+            //--------------------------------------------------------------
+            ST_RESET: begin
+                next_state = ST_INIT_WAIT;
+            end
+            
+            //--------------------------------------------------------------
+            // 초기화 대기 (전원 안정화)
+            //--------------------------------------------------------------
+            ST_INIT_WAIT: begin
+                if (delay_counter >= INIT_CYCLES) begin
+                    next_state = ST_INIT_1;
+                end
+            end
+            
+            //--------------------------------------------------------------
+            // 초기화 명령 전송
+            //--------------------------------------------------------------
+            ST_INIT_1: begin
+                if (delay_counter >= E_PULSE_CYCLES * 4) begin
+                    next_state = ST_INIT_2;
+                end
+            end
+            
+            ST_INIT_2: begin
+                if (delay_counter >= CMD_CYCLES) begin
+                    if (init_step < 5) begin
+                        next_state = ST_INIT_1;
+                    end else begin
+                        next_state = ST_INIT_3;
+                    end
+                end
+            end
+            
+            //--------------------------------------------------------------
+            // 화면 클리어
+            //--------------------------------------------------------------
+            ST_INIT_3: begin
+                if (delay_counter >= E_PULSE_CYCLES * 4) begin
+                    next_state = ST_INIT_4;
+                end
+            end
+            
+            ST_INIT_4: begin
+                if (delay_counter >= CMD_CYCLES) begin
+                    next_state = ST_IDLE;
+                end
+            end
+            
+            //--------------------------------------------------------------
+            // 대기 상태 (문자 출력 요청 대기)
+            //--------------------------------------------------------------
+            ST_IDLE: begin
+                if (lcd_req) begin
+                    next_state = ST_SET_ADDR;
+                end
+            end
+            
+            //--------------------------------------------------------------
+            // DDRAM 주소 설정
+            //--------------------------------------------------------------
+            ST_SET_ADDR: begin
+                if (delay_counter >= E_PULSE_CYCLES * 4) begin
+                    next_state = ST_WAIT;
+                end
+            end
+            
+            //--------------------------------------------------------------
+            // 명령 실행 대기
+            //--------------------------------------------------------------
+            ST_WAIT: begin
+                if (delay_counter >= CHAR_CYCLES) begin
+                    next_state = ST_WRITE_CHAR;
+                end
+            end
+            
+            //--------------------------------------------------------------
+            // 문자 출력
+            //--------------------------------------------------------------
+            ST_WRITE_CHAR: begin
+                if (delay_counter >= E_PULSE_CYCLES * 4) begin
+                    next_state = ST_IDLE;
+                end
+            end
+            
+            default: next_state = ST_RESET;
+        endcase
+    end
+
+    //==========================================================================
+    // LCD 제어 신호 생성
+    //==========================================================================
+    always @(posedge clk or negedge rst_n) begin
+        if (!rst_n) begin
+            lcd_e <= 1'b0;
+            lcd_rs <= 1'b0;
+            lcd_rw <= 1'b0;
+            lcd_data <= 8'h00;
+            lcd_busy <= 1'b0;
+            lcd_done <= 1'b0;
+            cmd_data <= 8'h00;
+        end else begin
+            lcd_done <= 1'b0;  // 1 사이클 펄스
+            
+            case (state)
+                //------------------------------------------------------
+                // 리셋
+                //------------------------------------------------------
+                ST_RESET: begin
+                    lcd_e <= 1'b0;
+                    lcd_rs <= 1'b0;
+                    lcd_rw <= 1'b0;
+                    lcd_data <= 8'h00;
+                    lcd_busy <= 1'b1;
+                end
+                
+                //------------------------------------------------------
+                // 초기화 대기
+                //------------------------------------------------------
+                ST_INIT_WAIT: begin
+                    lcd_busy <= 1'b1;
+                end
+                
+                //------------------------------------------------------
+                // 초기화 명령
+                //------------------------------------------------------
+                ST_INIT_1: begin
+                    lcd_busy <= 1'b1;
+                    lcd_rs <= 1'b0;  // 명령 모드
+                    lcd_rw <= 1'b0;  // 쓰기 모드
+                    
+                    case (init_step)
+                        0: cmd_data <= 8'h30;  // Function Set (8비트)
+                        1: cmd_data <= 8'h30;  // Function Set (8비트)
+                        2: cmd_data <= 8'h30;  // Function Set (8비트)
+                        3: cmd_data <= 8'h20;  // Function Set (4비트)
+                        4: cmd_data <= CMD_FUNCTION_SET;  // 4비트, 2라인
+                        5: cmd_data <= CMD_DISPLAY_ON;    // 디스플레이 ON
+                        default: cmd_data <= 8'h00;
+                    endcase
+                    
+                    // Enable 펄스 생성
+                    if (delay_counter < E_PULSE_CYCLES) begin
+                        lcd_e <= 1'b0;
+                        lcd_data <= cmd_data;
+                    end else if (delay_counter < E_PULSE_CYCLES * 2) begin
+                        lcd_e <= 1'b1;
+                        lcd_data <= cmd_data;
+                    end else begin
+                        lcd_e <= 1'b0;
+                        lcd_data <= cmd_data;
+                    end
+                end
+                
+                ST_INIT_2: begin
+                    lcd_busy <= 1'b1;
+                    lcd_e <= 1'b0;
+                end
+                
+                //------------------------------------------------------
+                // 화면 클리어
+                //------------------------------------------------------
+                ST_INIT_3: begin
+                    lcd_busy <= 1'b1;
+                    lcd_rs <= 1'b0;
+                    lcd_rw <= 1'b0;
+                    
+                    if (delay_counter < E_PULSE_CYCLES) begin
+                        lcd_e <= 1'b0;
+                        lcd_data <= CMD_CLEAR;
+                    end else if (delay_counter < E_PULSE_CYCLES * 2) begin
+                        lcd_e <= 1'b1;
+                        lcd_data <= CMD_CLEAR;
+                    end else begin
+                        lcd_e <= 1'b0;
+                        lcd_data <= CMD_CLEAR;
+                    end
+                end
+                
+                ST_INIT_4: begin
+                    lcd_busy <= 1'b1;
+                    lcd_e <= 1'b0;
+                end
+                
+                //------------------------------------------------------
+                // 대기 상태
+                //------------------------------------------------------
+                ST_IDLE: begin
+                    lcd_busy <= 1'b0;
+                    lcd_e <= 1'b0;
+                end
+                
+                //------------------------------------------------------
+                // DDRAM 주소 설정
+                //------------------------------------------------------
+                ST_SET_ADDR: begin
+                    lcd_busy <= 1'b1;
+                    lcd_rs <= 1'b0;  // 명령 모드
+                    lcd_rw <= 1'b0;
+                    
+                    if (delay_counter < E_PULSE_CYCLES) begin
+                        lcd_e <= 1'b0;
+                        lcd_data <= CMD_SET_DDRAM | ddram_addr;
+                    end else if (delay_counter < E_PULSE_CYCLES * 2) begin
+                        lcd_e <= 1'b1;
+                        lcd_data <= CMD_SET_DDRAM | ddram_addr;
+                    end else begin
+                        lcd_e <= 1'b0;
+                        lcd_data <= CMD_SET_DDRAM | ddram_addr;
+                    end
+                end
+                
+                //------------------------------------------------------
+                // 대기
+                //------------------------------------------------------
+                ST_WAIT: begin
+                    lcd_busy <= 1'b1;
+                    lcd_e <= 1'b0;
+                end
+                
+                //------------------------------------------------------
+                // 문자 출력
+                //------------------------------------------------------
+                ST_WRITE_CHAR: begin
+                    lcd_busy <= 1'b1;
+                    lcd_rs <= 1'b1;  // 데이터 모드
+                    lcd_rw <= 1'b0;
+                    
+                    if (delay_counter < E_PULSE_CYCLES) begin
+                        lcd_e <= 1'b0;
+                        lcd_data <= lcd_char;
+                    end else if (delay_counter < E_PULSE_CYCLES * 2) begin
+                        lcd_e <= 1'b1;
+                        lcd_data <= lcd_char;
+                    end else if (delay_counter < E_PULSE_CYCLES * 3) begin
+                        lcd_e <= 1'b0;
+                        lcd_data <= lcd_char;
+                    end else begin
+                        lcd_e <= 1'b0;
+                        lcd_data <= lcd_char;
+                        lcd_done <= 1'b1;  // 출력 완료 신호
+                    end
+                end
+                
+                default: begin
+                    lcd_e <= 1'b0;
+                    lcd_rs <= 1'b0;
+                    lcd_rw <= 1'b0;
+                    lcd_data <= 8'h00;
+                    lcd_busy <= 1'b0;
+                end
+            endcase
         end
     end
 
