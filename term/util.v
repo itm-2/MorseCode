@@ -1,10 +1,10 @@
 `timescale 1ns / 1ps
 
 module ButtonMorseInput #(
-    parameter integer DEBOUNCE_CYCLES             = 50_000,
-    parameter integer LONG_PRESS_CYCLES           = 2_500_000,
-    parameter integer AUTOREPEAT_DELAY_CYCLES     = 5_000_000,
-    parameter integer AUTOREPEAT_INTERVAL_CYCLES  = 1_000_000
+    parameter integer DEBOUNCE_CYCLES             = 250_000,      // 10ms
+    parameter integer LONG_PRESS_CYCLES           = 12_500_000,   // 500ms (사용 안 함)
+    parameter integer AUTOREPEAT_DELAY_CYCLES     = 12_500_000,   // 500ms
+    parameter integer AUTOREPEAT_INTERVAL_CYCLES  = 2_500_000     // 100ms
 )(
     input  wire clk,
     input  wire rst_n,
@@ -24,9 +24,9 @@ module ButtonMorseInput #(
     localparam KEY_DOT  = 8'd1;
     localparam KEY_DASH = 8'd2;
 
-    // =============================================
+    //==========================================================================
     // 1. Synchronizer (2-stage flip-flop)
-    // =============================================
+    //==========================================================================
     reg [1:0] b0_sync, b1_sync;
     
     always @(posedge clk or negedge rst_n) begin
@@ -34,14 +34,14 @@ module ButtonMorseInput #(
             b0_sync <= 2'b00;
             b1_sync <= 2'b00;
         end else begin
-            b0_sync <= {b0_sync[0], btn[0]};
-            b1_sync <= {b1_sync[0], btn[1]};
+            b0_sync <= {b0_sync[0], btn[0]};  // btn[0] = 점(dot)
+            b1_sync <= {b1_sync[0], btn[1]};  // btn[1] = 선(dash)
         end
     end
 
-    // =============================================
-    // 2. Debouncer for btn[0]
-    // =============================================
+    //==========================================================================
+    // 2. Debouncer for btn[0] (점 버튼)
+    //==========================================================================
     reg        b0_stable;
     reg [31:0] b0_counter;
 
@@ -63,53 +63,36 @@ module ButtonMorseInput #(
         end
     end
 
-    assign btn1_held = b0_stable;
-
-    // =============================================
-    // 3. Edge detection & Press duration for btn[0]
-    // =============================================
+    //==========================================================================
+    // 3. Edge detection for btn[0] - 점(dot) 신호
+    // ⭐ 수정: 버튼을 누를 때만 1회 발생
+    //==========================================================================
     reg        b0_prev;
-    reg [31:0] press_duration;
     reg        dot_pulse_reg;
-    reg        dash_pulse_reg;
 
-    wire b0_rising  = (b0_stable && !b0_prev);
-    wire b0_falling = (!b0_stable && b0_prev);
+    wire b0_rising = (b0_stable && !b0_prev);
 
     always @(posedge clk or negedge rst_n) begin
         if(!rst_n) begin
             b0_prev <= 1'b0;
-            press_duration <= 32'd0;
             dot_pulse_reg <= 1'b0;
-            dash_pulse_reg <= 1'b0;
         end else begin
             b0_prev <= b0_stable;
             dot_pulse_reg <= 1'b0;
-            dash_pulse_reg <= 1'b0;
 
+            // ⭐ 버튼을 누르는 순간에만 dot 펄스 발생
             if(b0_rising) begin
-                press_duration <= 32'd0;
-            end else if(b0_stable) begin
-                if(press_duration < 32'hFFFFFFFF)
-                    press_duration <= press_duration + 1;
-            end
-
-            if(b0_falling) begin
-                if(press_duration >= LONG_PRESS_CYCLES) begin
-                    dash_pulse_reg <= 1'b1;
-                end else if(press_duration > DEBOUNCE_CYCLES) begin
-                    dot_pulse_reg <= 1'b1;
-                end
+                dot_pulse_reg <= 1'b1;
             end
         end
     end
 
-    assign dot_pulse_btn0  = dot_pulse_reg;
-    assign dash_pulse_btn0 = dash_pulse_reg;
+    assign dot_pulse_btn0 = dot_pulse_reg;
+    assign btn1_held = b0_stable;  // Piezo용
 
-    // =============================================
-    // 4. Debouncer for btn[1]
-    // =============================================
+    //==========================================================================
+    // 4. Debouncer for btn[1] (선 버튼)
+    //==========================================================================
     reg        b1_stable;
     reg [31:0] b1_counter;
 
@@ -131,71 +114,36 @@ module ButtonMorseInput #(
         end
     end
 
-    // =============================================
-    // 5. Auto-repeat for btn[1]
-    // =============================================
-    reg [1:0]  ar_state;
-    reg [31:0] ar_counter;
-    reg        auto_dot_reg;
+    //==========================================================================
+    // 5. Edge detection for btn[1] - 선(dash) 신호
+    // ⭐ 수정: 버튼을 누를 때만 1회 발생
+    //==========================================================================
+    reg        b1_prev;
+    reg        dash_pulse_reg;
 
-    localparam AR_IDLE   = 2'd0;
-    localparam AR_DELAY  = 2'd1;
-    localparam AR_REPEAT = 2'd2;
-
-    reg b1_prev;
     wire b1_rising = (b1_stable && !b1_prev);
 
     always @(posedge clk or negedge rst_n) begin
         if(!rst_n) begin
             b1_prev <= 1'b0;
-            ar_state <= AR_IDLE;
-            ar_counter <= 32'd0;
-            auto_dot_reg <= 1'b0;
+            dash_pulse_reg <= 1'b0;
         end else begin
             b1_prev <= b1_stable;
-            auto_dot_reg <= 1'b0;
+            dash_pulse_reg <= 1'b0;
 
-            case(ar_state)
-                AR_IDLE: begin
-                    if(b1_rising) begin
-                        ar_state <= AR_DELAY;
-                        ar_counter <= 32'd0;
-                    end
-                end
-
-                AR_DELAY: begin
-                    if(!b1_stable) begin
-                        ar_state <= AR_IDLE;
-                    end else if(ar_counter >= AUTOREPEAT_DELAY_CYCLES) begin
-                        auto_dot_reg <= 1'b1;
-                        ar_state <= AR_REPEAT;
-                        ar_counter <= 32'd0;
-                    end else begin
-                        ar_counter <= ar_counter + 1;
-                    end
-                end
-
-                AR_REPEAT: begin
-                    if(!b1_stable) begin
-                        ar_state <= AR_IDLE;
-                    end else if(ar_counter >= AUTOREPEAT_INTERVAL_CYCLES) begin
-                        auto_dot_reg <= 1'b1;
-                        ar_counter <= 32'd0;
-                    end else begin
-                        ar_counter <= ar_counter + 1;
-                    end
-                end
-
-                default: ar_state <= AR_IDLE;
-            endcase
+            // ⭐ 버튼을 누르는 순간에만 dash 펄스 발생
+            if(b1_rising) begin
+                dash_pulse_reg <= 1'b1;
+            end
         end
     end
 
-    assign auto_dot_pulse = auto_dot_reg;
+    assign dash_pulse_btn0 = dash_pulse_reg;
+    assign auto_dot_pulse = 1'b0;  // 자동 반복 비활성화
 
-    // =============================================
+    //==========================================================================
     // 6. Key packet generation
-    // =============================================
+    //==========================================================================
     always @(posedge clk or negedge rst_n) begin
         if(!rst_n) begin
             key_valid <= 1'b0;
@@ -203,12 +151,14 @@ module ButtonMorseInput #(
         end else begin
             key_valid <= 1'b0;
 
-            if(dash_pulse_reg) begin
-                key_valid <= 1'b1;
-                key_packet <= {TYPE_KEY, KEY_DASH};
-            end else if(dot_pulse_reg || auto_dot_reg) begin
+            // ⭐ 각 버튼에서 명확한 신호 생성
+            if(dot_pulse_reg) begin
                 key_valid <= 1'b1;
                 key_packet <= {TYPE_KEY, KEY_DOT};
+            end 
+            else if(dash_pulse_reg) begin
+                key_valid <= 1'b1;
+                key_packet <= {TYPE_KEY, KEY_DASH};
             end
         end
     end
@@ -783,3 +733,4 @@ module LCD_Controller #(
     end
 
 endmodule
+
