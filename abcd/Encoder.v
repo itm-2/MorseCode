@@ -61,7 +61,7 @@ module Encoder #(
     // Morse lookup (LSB first)
     // ========================================
     // ========================================
-// Morse lookup (LSB first, ¿Ã¹Ù¸¥ ¼ø¼­)
+// Morse lookup (LSB first, ì˜¬ë°”ë¥¸ ìˆœì„œ)
 // ========================================
     function [8:0] morse_lookup;
         input [7:0] c;
@@ -134,10 +134,10 @@ module Encoder #(
             FETCH: begin
                 if (char_idx >= text_length)
                     next_state = DONE_ST;
-                else if (normalize(get_char(char_idx)) == 8'd32)  // ¡ç ¿©±â ¼öÁ¤!
-                    next_state = FETCH;  // Space¸é ´Ù½Ã FETCH
+                else if (normalize(get_char(char_idx)) == 8'd32)  // â† ì—¬ê¸° ìˆ˜ì •!
+                    next_state = FETCH;  // Spaceë©´ ë‹¤ì‹œ FETCH
                 else
-                    next_state = ENCODE;  // ÀÏ¹İ ¹®ÀÚ¸é ENCODE
+                    next_state = ENCODE;  // ì¼ë°˜ ë¬¸ìë©´ ENCODE
             end
     
             ENCODE: begin
@@ -195,7 +195,7 @@ module Encoder #(
                             bitlen <= bitlen + 9'd4;
                         end
                         char_idx <= char_idx + 4'd1;
-                        // is_space ÇÃ·¡±×´Â »ç½Ç ÇÊ¿ä ¾øÀ½!
+                        // is_space í”Œë˜ê·¸ëŠ” ì‚¬ì‹¤ í•„ìš” ì—†ìŒ!
                     end else begin
                         {morse_len, morse_pattern} <= morse_lookup(normalize(get_char(char_idx)));
                     end
@@ -204,7 +204,7 @@ module Encoder #(
 
                 ENCODE: begin
                     if (morse_step < morse_len) begin
-                        // LSB first·Î ÀĞ±â
+                        // LSB firstë¡œ ì½ê¸°
                         if (morse_pattern[morse_step] == 1'b0) begin
                             // Dot = 0
                             if (bitlen < OUT_MAX_BITS) begin
